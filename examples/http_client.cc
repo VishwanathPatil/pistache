@@ -26,7 +26,6 @@ int main(int argc, char *argv[]) {
     }
 
     Http::Client client;
-
     auto opts = Http::Client::options()
         .threads(1)
         .maxConnectionsPerHost(8);
@@ -49,12 +48,13 @@ int main(int argc, char *argv[]) {
                std::cout << "Response body = " << body << std::endl;
         }, Async::IgnoreException);
         responses.push_back(std::move(resp));
+		auto sync = Async::whenAll(responses.begin(), responses.end());
+		Async::Barrier<std::vector<Http::Response>> barrier(sync);
+
+		if(barrier.wait_for(std::chrono::seconds(5)) == std::cv_status::timeout) {
+				++failedRequests;
+		}
     }
-
-    auto sync = Async::whenAll(responses.begin(), responses.end());
-    Async::Barrier<std::vector<Http::Response>> barrier(sync);
-
-    barrier.wait_for(std::chrono::seconds(5));
 
     auto end = std::chrono::system_clock::now();
     std::cout << "Summary of execution" << std::endl
@@ -63,6 +63,5 @@ int main(int argc, char *argv[]) {
               << "Total number of requests failed   : " << failedRequests.load() << std::endl
               << "Total time of execution           : "
               << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms" << std::endl;
-
     client.shutdown();
 }
