@@ -63,5 +63,6 @@ int main(int argc, char *argv[]) {
               << "Total number of requests failed   : " << failedRequests.load() << std::endl
               << "Total time of execution           : "
               << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms" << std::endl;
+	
     client.shutdown();
 }
